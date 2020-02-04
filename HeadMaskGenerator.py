@@ -35,7 +35,7 @@ def load_mask(Ipath, Opath):
     print("The dataset path is " + Ipath)
     print("Loading images .......... ")
     l = filelocation(Ipath)
-    [orgImge,nofimage,w,h, slice_thickness] =  LoadOrginalImage(l)
+    [orgImge,nofimage,w,h, slice_distance, slice_thickness] =  LoadOrginalImage(l)
     if nofimage == 0:
         print("There is no image in this directory")
         exit(1)
@@ -74,6 +74,6 @@ def load_mask(Ipath, Opath):
 
     print("Done! ")
 
-    return mask, actImg, slice_thickness
+    return mask, actImg, slice_distance, slice_thickness
 
 

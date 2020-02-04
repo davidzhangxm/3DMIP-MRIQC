@@ -34,6 +34,7 @@ def LoadOrginalImage(l1):
     img        = []
     cnt        = 0
     w = h = 0
+    slice_distance = 0
     slice_thickness = 0
     for i in range(len(l1)):
         item = int(i)
@@ -44,7 +45,8 @@ def LoadOrginalImage(l1):
             if first:
                 # slice thickness property of meta data 
                 # '0018|0050'
-                slice_num = x.GetMetaData('0018|0050')
+                slice_distance = x.GetMetaData('0018|0088')
+                slice_thickness = x.GetMetaData('0018|0050')
                 w, h = y.shape
                 first = False
                 img = np.zeros((w, h, rng))               #  Read image
@@ -58,4 +60,4 @@ def LoadOrginalImage(l1):
     for i in range(cnt):
         imgInt[:,:,i] = img[:,:,i].astype(np.int64)
         
-    return (imgInt,cnt, w, h, slice_num)
+    return (imgInt,cnt, w, h, slice_distance, slice_thickness)

@@ -109,7 +109,16 @@ def load_existing_mask(Opath):
     masks, imgs = ImgLoader(masks_path, dcms_path)
     return masks, imgs
 
-    
+# slice property
+# from f(x) = e^(-pi*(x-1)^2)
+def slice_score(slice_thickness, slice_spacing):
+    p = slice_thickness / slice_spacing
+    return np.exp(-np.pi * (p - 1)**2)
+
+# weight control for final score
+def final_score(img_score, slice_score):
+    return img_score * 0.7 + slice_score * 0.3
+
 
 if __name__ == "__main__":
     # parsing command line arguments 
@@ -139,14 +148,15 @@ if __name__ == "__main__":
     if not os.path.exists(Opath):
         os.makedirs(Opath)
 
-    masks, imgs, thickness = load_mask(Ipath, Opath)
+    masks, imgs, distance, thickness = load_mask(Ipath, Opath)
 
     scores = mriqa(masks, imgs)
-    score = sum(scores) / len(scores)
+    img_score = sum(scores) / len(scores)
+    s_score = slice_score(float(thickness), float(distance))
+    score = final_score(img_score, s_score)
 
-    print("The dataset quality is ", score)
-    print("The thickness of slice is ", thickness)
-    print("The number of slice is ", len(scores))
+    print(f"The dataset quality is {score}")
+    print(f"The number of slice is {len(scores)}")
 
     # check difference between new generated img and existing img
 
