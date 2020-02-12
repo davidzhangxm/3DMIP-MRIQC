@@ -3,6 +3,7 @@ import os
 import numpy as np
 from scipy.ndimage import maximum_filter, minimum_filter
 import argparse
+import time
 
 from HeadMaskGenerator import load_mask
 
@@ -118,6 +119,27 @@ def slice_score(slice_thickness, slice_spacing):
 # weight control for final score
 def final_score(img_score, slice_score):
     return img_score * 0.7 + slice_score * 0.3
+
+def directory_score(directory):
+    """
+    :param directory: Input directory containg MRI images
+    :return: metric (img_quality_score, img_slice_score, num_slices, total_score, time_consuming)
+    """
+    print(f"Starting process directory {directory}")
+    masks  = []
+    imgs = []
+    thickness = 0
+
+    masks, imgs, distance, thickness = load_mask(directory)
+
+    scores = mriqa(masks, imgs)
+    img_score = sum(scores) / len(scores)
+    s_score = slice_score(float(thickness), float(distance))
+    score = final_score(img_score, s_score)
+
+    print(f"Processed the directory {directory}")
+    return (img_score, s_score, len(scores), score)
+
 
 
 if __name__ == "__main__":

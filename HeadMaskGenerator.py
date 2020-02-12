@@ -31,7 +31,7 @@ from scipy.ndimage.morphology import binary_fill_holes
 # Ipath = "../data/series_1_localizer_BH/"
 # Spath  = "./OutputImg-Larry/"
 
-def load_mask(Ipath, Opath):
+def load_mask(Ipath, Opath=None):
     print("The dataset path is " + Ipath)
     print("Loading images .......... ")
     l = filelocation(Ipath)
@@ -61,15 +61,16 @@ def load_mask(Ipath, Opath):
         actImg[:,:,i]   = img
         sleep(0.1)
     
-    dictr = Opath
-    for i in tqdm(range(nofimage)):
-        x=l[i].split("/")
-        loc1=dictr+x[-1]+'.png'
-        # loc2=dictr+x[-1]+'fg'+'.png'
-        loc3=dictr+x[-1]+'actImg'+'.png'
-        plt.imsave(loc1,mask[:,:,i],cmap = plt.cm.gray) # save psudo mask
-        # plt.imsave(loc2,fgnd[:,:,i],cmap = plt.cm.gray)
-        plt.imsave(loc3,actImg[:,:,i],cmap = plt.cm.gray)
+    if Opath is not None:
+        dictr = Opath
+        for i in tqdm(range(nofimage)):
+            x=l[i].split("/")
+            loc1=dictr+x[-1]+'.png'
+            # loc2=dictr+x[-1]+'fg'+'.png'
+            loc3=dictr+x[-1]+'actImg'+'.png'
+            plt.imsave(loc1,mask[:,:,i],cmap = plt.cm.gray) # save psudo mask
+            # plt.imsave(loc2,fgnd[:,:,i],cmap = plt.cm.gray)
+            plt.imsave(loc3,actImg[:,:,i],cmap = plt.cm.gray)
 
 
     print("Done! ")
