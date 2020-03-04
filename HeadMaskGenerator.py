@@ -20,6 +20,8 @@ from ImageFinder import *
 from scipy.stats import norm
 from scipy.ndimage.morphology import binary_fill_holes
 
+from HDR_filter import HDRFilter
+
 
 #print("Enter image folder path: ")
 #Ipath = input()
@@ -31,11 +33,15 @@ from scipy.ndimage.morphology import binary_fill_holes
 # Ipath = "../data/series_1_localizer_BH/"
 # Spath  = "./OutputImg-Larry/"
 
-def load_mask(Ipath, Opath=None):
+def load_mask(Ipath, hdr, Opath=None):
     print("The dataset path is " + Ipath)
     print("Loading images .......... ")
     l = filelocation(Ipath)
+    # delete extra mac system attribute file
+    if l[0].split('/')[-1] == '.DS_Store':
+        l.pop(0)
     [orgImge,nofimage,w,h, slice_distance, slice_thickness] =  LoadOrginalImage(l)
+
     if nofimage == 0:
         print("There is no image in this directory")
         exit(1)
@@ -48,17 +54,25 @@ def load_mask(Ipath, Opath=None):
     # fgnd   = np.zeros((512,512,nofimage))
     actImg = np.zeros((w,h,nofimage))
     selem  = disk(4)
+    filter = HDRFilter(True)
     for i in tqdm(range(nofimage)):
-        img             = orgImge[:,:,i]
-        diff            = anisodiff(img,20,50,0.1)
+        raw_img             = orgImge[:,:,i]
+        # print(raw_img.dtype)
+        imgInt = raw_img.astype(np.int64)
+        diff            = anisodiff(imgInt,20,50,0.1)
         mu,sigma        = norm.fit(diff)
         htr             = apply_hysteresis_threshold(diff,mu,sigma).astype(int)
         pmask           = binary_fill_holes(htr)
         eroded          = erosion(pmask, selem)
-        [fg,bg]         = foregroundBackground(eroded,img)
+        # [fg,bg]         = foregroundBackground(eroded,imgInt)
         mask[:,:,i]     = eroded
         # fgnd[:,:,i]     = fg
-        actImg[:,:,i]   = img
+        # HDR filter
+        if hdr:
+            print("HDR")
+            actImg[:,:,i]   = pmask * filter.process(raw_img)
+        else:
+            actImg[:,:,i] = imgInt
         sleep(0.1)
     
     if Opath is not None:

@@ -4,8 +4,12 @@ import numpy as np
 from scipy.ndimage import maximum_filter, minimum_filter
 import argparse
 import time
+import math
 
 from HeadMaskGenerator import load_mask
+
+# debug draw
+import matplotlib.pyplot as plt
 
 '''
 calculate all MRI image score in the dataset
@@ -17,10 +21,18 @@ output => average score of current dataset
 def mriqa(masks, imgs):
     _, _, n = masks.shape
     scores = []
+    num_mask = len(masks)
+    cnt = 0
     for i in range(n):
         img = imgs[:,:,i]
         mask = masks[:,:,i]
-
+        if (np.sum(mask) / (mask.shape[0] * mask.shape[1]) < 0.2):
+            scores.append(0.0)
+            cnt += 1
+            continue
+        # most images are polluted
+        if cnt > num_mask / 4:
+            return [0.0]
         # normalize img
         norm_img = cv2.normalize(img, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
 
@@ -39,28 +51,44 @@ def mriqa(masks, imgs):
         fcmc = (contrast_img > contrast_moment).astype(np.int)
         fgmc = (contrast_img > grayscale_moment).astype(np.int)
 
+        # print(np.sum(fgmg))
+        # print(np.sum(fcmg))
+        # print(np.sum(fcmc))
+        # print(np.sum(fgmc))
+        # fig = plt.figure(figsize=(10,10))
+        # fig.add_subplot(2,2,1)
+        # plt.imshow(fgmg, cmap=plt.cm.bone)
+        # fig.add_subplot(2,2,2)
+        # plt.imshow(fcmg, cmap=plt.cm.bone)
+        # fig.add_subplot(2,2,3)
+        # plt.imshow(fcmc, cmap=plt.cm.bone)
+        # fig.add_subplot(2,2,4)
+        # plt.imshow(fgmc, cmap=plt.cm.bone)
+        # plt.show()
         # luminance contrast quality score
         q11 = fcmg & fgmg
-        q1 = np.sum(q11) / max(np.sum(fcmg), np.sum(fgmg))
+        q1 = np.sum(mask * q11) / max(np.sum(fcmg), np.sum(fgmg)) if max(np.sum(fcmg), np.sum(fgmg)) != 0 else 0
 
         # texture score
         q22 = fgmc & fcmc
-        q2 = np.sum(q22) / max(np.sum(fgmc), np.sum(fgmg))
+        q2 = np.sum(mask * q22) / max(np.sum(fgmc), np.sum(fgmg)) if max(np.sum(fgmc), np.sum(fgmg)) != 0 else 0
 
         # texture contrast quality score
         q33 = fgmc & fcmc
-        q3 = np.sum(q33) / np.sum(mask)
+        q3 = np.sum(mask * q33) / np.sum(mask) if np.sum(mask) != 0 else 0
 
         # lightness quality score
         q44 = fcmg & fgmg
-        q4 = np.sum(q44) / np.sum(mask)
+        q4 = np.sum(mask * q44) / np.sum(mask) if np.sum(mask) != 0 else 0
 
+        # print(f"{q1},{q2},{q3},{q4}")
         # weight
         w1 = w2 = w4 = 0.1
         w3 = 0.7
         Q = w1 * q1 + w2 * q2 + w3 * q3 + w4 * q4
 
-        scores.append(Q)
+        if not math.isnan(Q):
+            scores.append(Q)
     return scores
 
 # load mask img and dicom img file name
@@ -120,7 +148,7 @@ def slice_score(slice_thickness, slice_spacing):
 def final_score(img_score, slice_score):
     return img_score * 0.7 + slice_score * 0.3
 
-def directory_score(directory):
+def directory_score(directory, hdr):
     """
     :param directory: Input directory containg MRI images
     :return: metric (img_quality_score, img_slice_score, num_slices, total_score, time_consuming)
@@ -130,23 +158,23 @@ def directory_score(directory):
     imgs = []
     thickness = 0
 
-    masks, imgs, distance, thickness = load_mask(directory)
-
+    masks, imgs, distance, thickness = load_mask(directory, hdr)
     scores = mriqa(masks, imgs)
     img_score = sum(scores) / len(scores)
-    s_score = slice_score(float(thickness), float(distance))
+    s_score = slice_score(float(thickness), float(distance)) if distance != 0 and thickness != 0 else 0
     score = final_score(img_score, s_score)
 
     print(f"Processed the directory {directory}")
     return (img_score, s_score, len(scores), score)
 
 
-
+# Unit Test
 if __name__ == "__main__":
     # parsing command line arguments 
-    # Input paht of MRI image dataset
+    # Input path of MRI image dataset
     # Output result of foreground image 
     parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--hdr", type=bool)
     parser.add_argument("-i", "--input")
     parser.add_argument("-o", "--output")
     args = parser.parse_args()
@@ -156,6 +184,7 @@ if __name__ == "__main__":
 
     Ipath = args.input
     Opath = args.output
+    HDREnable = args.hdr
     # Ipath = "../data/series_216_SGE_fs_ax_113_2.55_256x256/"
     # Ipath = "../pydicom-playground/data/"
     # Opath = "../bfg/OutputImg-Larry-8/"
@@ -176,7 +205,7 @@ if __name__ == "__main__":
     img_score = sum(scores) / len(scores)
     s_score = slice_score(float(thickness), float(distance))
     score = final_score(img_score, s_score)
-
+    print(f"img_score is: {img_score}, slice_score is: {s_score}")
     print(f"The dataset quality is {score}")
     print(f"The number of slice is {len(scores)}")
 
