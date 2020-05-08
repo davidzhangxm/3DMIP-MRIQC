@@ -4,10 +4,10 @@ from scipy.ndimage.filters import median_filter
 from AnDiffusion import *
 
 def partialSum(y,j):
-    x = 0;
+    x = 0
     for i in range(j):
         x+=y[i]
-    return x;
+    return x
 
 def Percentile(data,ptile):
     ptile = ptile

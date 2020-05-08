@@ -1,0 +1,10 @@
+#!/bin/bash
+# My first script
+
+python mriqa.py -i ../data/test/2012-08-31-MRI/series_3_COR_Fiesta/ -o output/output_3_COR_Fiesta_no/
+python mriqa.py -i ../data/test/2012-08-31-MRI/series_7_COR_SSFSE/ -o output/output_7_cor_ssfse_no/
+python mriqa.py -i ../data/test/2012-08-31-MRI/series_13_COR_SSFSE_FS/ -o output/output_13_cor_ssfse_fs_no/
+python mriqa.py -i ../data/test/2012-08-31-MRI/series_15_COR_LAVA_PRE/ -o output/output_15_cor_lava_pre_no/
+python mriqa.py -i ../data/test/2012-08-31-MRI/series_1_3_plane_Loc_SSFSE_BH/ -o output/output_plane_loc_no/
+python mriqa.py -i ../data/test/2012-08-31-MRI/series_4_AX_Fiesta/ -o output/output_4_ax_fiesta_no/
+python mriqa.py -i ../data/test/2012-08-31-MRI/series_8_Ax_3D_DualEcho/ -o output/output_ax_3d_dual_no/
